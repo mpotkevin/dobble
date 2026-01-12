@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>找相同桌遊產生器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+TC:wght@400;700&display=swap');
+        
+        body { 
+            font-family: 'Inter', 'Noto Sans TC', sans-serif; 
+            background-color: #f8fafc;
+            overflow-x: hidden;
+        }
+
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            max-width: 320px; 
+            aspect-ratio: 1 / 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            background: #ffffff;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            max-width: 100%; 
+            height: auto !important;
+            display: block;
+        }
+
+        .setting-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .preview-thumb {
+            width: 36px;
+            height: 36px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+
+        @keyframes ring-expand {
+            0% { transform: scale(0.3); opacity: 0; }
+            30% { opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+
+        .match-ring {
+            position: absolute;
+            pointer-events: none;
+            border: 5px solid #22c55e;
+            border-radius: 50%;
+            animation: ring-expand 0.6s ease-out forwards;
+            z-index: 10;
+        }
+
+        .error-shake {
+            animation: shake 0.4s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        #pdfPreviewModal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 50;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+
+        .pdf-page-preview {
+            background: white;
+            width: 210mm;
+            min-height: 297mm;
+            padding: 15mm;
+            margin: 0 auto 2rem auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 10mm;
+        }
+
+        .pdf-card-preview {
+            border: 1px dashed #ddd;
+            aspect-ratio: 1/1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body class="text-slate-900">
+
+    <div class="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
+        <!-- 頂部標題 -->
+        <header class="mb-8 text-center md:text-left">
+            <h1 class="text-3xl font-extrabold tracking-tight text-slate-900">找相同桌遊產生器</h1>
+            <p class="text-slate-500 text-sm mt-1">多樣化圖案設定</p>
+        </header>
+
+        <div class="grid grid-cols-1 xl:grid-cols-4 gap-8 items-start">
+            
+            <!-- 左側設定面板 -->
+            <aside class="xl:col-span-1 space-y-4">
+                <div class="setting-card p-6 rounded-3xl shadow-sm border border-slate-200">
+                    <h3 class="text-lg font-bold text-slate-700 tracking-tight mb-5 border-b border-slate-100 pb-3 text-center md:text-left flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37a1.724 1.724 0 002.572-1.065z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        遊戲設定
+                    </h3>
+                    
+                    <div class="space-y-6">
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-2 gap-3">
+                                <section>
+                                    <label class="text-[10px] font-bold mb-1.5 block text-slate-500 uppercase">圖案種類</label>
+                                    <select id="typeSelect" onchange="startGame()" class="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none">
+                                        <option value="emoji">圖案</option>
+                                        <option value="number">數字</option>
+                                        <option value="chinese">國字</option>
+                                        <option value="english">英文</option>
+                                    </select>
+                                </section>
+                                <section>
+                                    <label class="text-[10px] font-bold mb-1.5 block text-slate-500 uppercase">圖案數量</label>
+                                    <select id="orderSelect" onchange="startGame()" class="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none">
+                                        <option value="2">3 個</option>
+                                        <option value="3">4 個</option>
+                                        <option value="4">5 個</option>
+                                        <option value="5" selected>6 個</option>
+                                        <option value="6">7 個</option>
+                                        <option value="7">8 個</option>
+                                    </select>
+                                </section>
+                            </div>
+
+                            <section>
+                                <label class="text-[10px] font-bold mb-1.5 block text-slate-500 uppercase">卡牌外觀</label>
+                                <div class="flex bg-slate-100 p-1.5 rounded-2xl gap-1.5">
+                                    <button onclick="setShape('circle')" id="btnCircle" class="flex-1 py-3 rounded-xl text-xs font-bold bg-white shadow-sm text-blue-600 transition-all">圓形</button>
+                                    <button onclick="setShape('square')" id="btnSquare" class="flex-1 py-3 rounded-xl text-xs font-bold text-slate-400 transition-all">方形</button>
+                                </div>
+                            </section>
+                        </div>
+
+                        <section>
+                            <label class="text-[10px] font-bold mb-1.5 block text-slate-500 uppercase font-bold">管理與列印</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <input type="file" id="imageUpload" multiple accept="image/*" class="hidden">
+                                <label for="imageUpload" class="flex items-center justify-center gap-2 h-11 bg-blue-50 border border-blue-100 rounded-xl cursor-pointer hover:bg-blue-100 transition-colors text-xs font-bold text-blue-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                                    上傳圖片
+                                </label>
+                                <button onclick="openPdfPreview()" class="flex items-center justify-center gap-2 h-11 bg-slate-50 border border-slate-200 rounded-xl font-bold hover:bg-slate-100 hover:text-blue-600 hover:border-blue-200 transition-all text-xs text-slate-500 shadow-sm group">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                                    產生 PDF
+                                </button>
+                            </div>
+                            <div id="previewContainer" class="flex flex-wrap gap-2 mt-4 empty:hidden"></div>
+                        </section>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- 右側主要區域 -->
+            <main class="xl:col-span-3 space-y-6">
+                <!-- 狀態資訊欄 -->
+                <div class="bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 flex flex-wrap justify-center md:justify-between items-center gap-4">
+                    <div class="flex items-center gap-6">
+                        <div class="flex flex-col">
+                            <span class="text-[9px] text-slate-400 uppercase font-bold tracking-[0.2em]">得分</span>
+                            <span id="statScore" class="text-2xl font-black text-blue-600 leading-none">0</span>
+                        </div>
+                        <div class="h-8 w-px bg-slate-100"></div>
+                        <div class="flex flex-col">
+                            <span class="text-[9px] text-slate-400 uppercase font-bold tracking-[0.2em]">計時</span>
+                            <span id="statTimer" class="text-2xl font-black text-slate-700 font-mono leading-none">00:00</span>
+                        </div>
+                    </div>
+                    <button onclick="startGame()" class="bg-slate-900 text-white h-11 px-8 rounded-2xl font-bold hover:bg-blue-600 transition-all shadow-sm active:scale-95 text-xs text-center">
+                        重啟遊戲
+                    </button>
+                </div>
+
+                <!-- 遊戲主體 -->
+                <div class="bg-white rounded-[3.5rem] p-8 md:p-14 shadow-sm border border-slate-100 relative overflow-hidden">
+                    <div id="gameUI" class="flex flex-col items-center w-full">
+                        <div id="messageBox" class="mb-10 text-[10px] font-bold text-slate-300 tracking-[0.5em] uppercase text-center">Comparing Symbols</div>
+                        
+                        <div class="flex flex-row items-center justify-center gap-6 md:gap-16 w-full max-w-4xl relative z-10">
+                            <div id="container1" class="canvas-container">
+                                <canvas id="card1" width="450" height="450" class="rounded-full"></canvas>
+                            </div>
+                            <div class="hidden md:flex flex-col items-center gap-4 opacity-10">
+                                <div class="w-2 h-2 bg-blue-600 rounded-full"></div>
+                                <div class="w-0.5 h-32 bg-slate-400 rounded-full"></div>
+                                <div class="w-2 h-2 bg-blue-600 rounded-full"></div>
+                            </div>
+                            <div id="container2" class="canvas-container">
+                                <canvas id="card2" width="450" height="450" class="rounded-full"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 頁尾署名 -->
+                <footer class="pt-4 text-center">
+                    <a href="https://www.facebook.com/kevin.pptgame" target="_blank" class="text-xs font-medium text-slate-400 hover:text-blue-500 transition-colors inline-flex items-center gap-2 bg-white px-6 py-2.5 rounded-full shadow-sm border border-slate-100">
+                        <span>設計：職能治療師 - 鄭凱文</span>
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                    </a>
+                </footer>
+            </main>
+        </div>
+    </div>
+
+    <!-- PDF 預覽彈窗 -->
+    <div id="pdfPreviewModal">
+        <div class="max-w-5xl mx-auto flex flex-col items-center">
+            <div class="w-full flex justify-between items-center mb-6 sticky top-0 bg-black bg-opacity-80 py-4 z-50 rounded-b-xl px-6">
+                <h2 class="text-white text-xl font-bold">列印預覽 (A4 佈局)</h2>
+                <div class="flex gap-4">
+                    <button onclick="closePdfPreview()" class="bg-white bg-opacity-20 text-white px-6 py-2 rounded-xl font-bold hover:bg-opacity-30 transition-all">關閉預覽</button>
+                    <button onclick="exportToPDF()" class="bg-blue-600 text-white px-8 py-2 rounded-xl font-bold hover:bg-blue-700 shadow-lg transition-all">確認下載 PDF</button>
+                </div>
+            </div>
+            <div id="previewPagesContainer" class="w-full"></div>
+        </div>
+    </div>
+
+    <canvas id="pdfCanvas" width="600" height="600" style="display:none;"></canvas>
+
+    <script>
+        // --- 核心變數 ---
+        let dobbleOrder = 5; 
+        let shape = 'circle';
+        let customImages = [];
+        
+        // 圖案清單優化：確保內容純淨
+        const symbolSets = {
+            emoji: ["🍎","🍌","🍇","🍓","🍒","🍍","🥝","🍋","🍐","🍑","🍉","🌽","🍄","🥑","🍆","🍔","🍕","🍟","🍦","🍩","⚽","🏀","🎨","🎬","🚗","🚀","🛸","💎","🌈","🔥","⭐","🌙","☀️","🍀","🐱","🐶","🦊","🦁","🐰","🦄","🦜","🐠","🐙","🦋","🎸","⌚","📱","💡","🔑","🎁","🎈","🧸","🔋","⚙️","⚖️","🧱"],
+            number: Array.from({length: 60}, (_, i) => (i + 1).toString()),
+            chinese: ["一","二","三","四","五","六","七","八","九","十","天","地","人","山","水","火","風","木","石","金","日","月","星","雲","雨","雪","電","大","小","多","少","長","短","高","低","左","右","前","後","明","暗","春","夏","秋","冬","花","草","魚","鳥","馬","羊","牛","田"],
+            english: ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"]
+        };
+
+        let currentSymbols = [];
+        let allGeneratedCards = [];
+        let currentPairs = [];
+        let score = 0;
+        let gameStartTime = null;
+        let timerInterval = null;
+
+        const canvas1 = document.getElementById('card1');
+        const canvas2 = document.getElementById('card2');
+        const ctx1 = canvas1.getContext('2d');
+        const ctx2 = canvas2.getContext('2d');
+
+        function generateDeck() {
+            let n = dobbleOrder; 
+            let deck = [];
+            for (let i = 0; i <= n; i++) {
+                let card = [0];
+                for (let j = 0; j < n; j++) card.push(1 + i * n + j);
+                deck.push(card);
+            }
+            for (let i = 0; i < n; i++) {
+                for (let j = 0; j < n; j++) {
+                    let card = [i + 1];
+                    for (let k = 0; k < n; k++) card.push(1 + n + k * n + (i * k + j) % n);
+                    deck.push(card);
+                }
+            }
+            return deck;
+        }
+
+        function getGeometricPoints(count, radius, centerX, centerY) {
+            const points = [];
+            if (count === 3) {
+                for (let i = 0; i < 3; i++) {
+                    const angle = (i * 120 - 90) * (Math.PI / 180);
+                    points.push({ x: centerX + radius * 0.65 * Math.cos(angle), y: centerY + radius * 0.65 * Math.sin(angle) });
+                }
+            } else {
+                points.push({ x: centerX, y: centerY });
+                const ringCount = count - 1;
+                const angleStep = 360 / ringCount;
+                for (let i = 0; i < ringCount; i++) {
+                    const angle = (i * angleStep - 90) * (Math.PI / 180);
+                    points.push({ x: centerX + radius * 0.72 * Math.cos(angle), y: centerY + radius * 0.72 * Math.sin(angle) });
+                }
+            }
+            const globalRotation = Math.random() * Math.PI * 2;
+            return points.map(p => {
+                const dx = p.x - centerX;
+                const dy = p.y - centerY;
+                return {
+                    x: centerX + dx * Math.cos(globalRotation) - dy * Math.sin(globalRotation),
+                    y: centerY + dx * Math.sin(globalRotation) + dy * Math.cos(globalRotation)
+                };
+            });
+        }
+
+        function drawCardOnCanvas(ctx, cardData, size = 450) {
+            const centerX = size / 2;
+            const centerY = size / 2;
+            const radius = size / 2;
+            ctx.clearRect(0, 0, size, size);
+            
+            const items = [];
+            const points = getGeometricPoints(cardData.length, radius, centerX, centerY);
+
+            cardData.forEach((symbolIdx, i) => {
+                const pos = points[i];
+                const scale = 0.95 + Math.random() * 0.3;
+                const fontSize = (size / 7) * scale;
+                const rotation = Math.random() * Math.PI * 2;
+                const symbol = currentSymbols[symbolIdx % currentSymbols.length];
+
+                ctx.save();
+                ctx.translate(pos.x, pos.y);
+                ctx.rotate(rotation);
+                
+                if (typeof symbol === 'string') {
+                    ctx.font = `bold ${fontSize}px Arial, "Noto Sans TC"`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = '#1e293b';
+                    ctx.fillText(symbol, 0, 0);
+                } else if (symbol instanceof HTMLImageElement) {
+                    const imgSize = fontSize * 1.3;
+                    ctx.drawImage(symbol, -imgSize/2, -imgSize/2, imgSize, imgSize);
+                }
+                ctx.restore();
+                items.push({ x: pos.x, y: pos.y, size: fontSize, symbolIdx });
+            });
+            return items;
+        }
+
+        function startGame() {
+            if (timerInterval) clearInterval(timerInterval);
+            gameStartTime = Date.now();
+            timerInterval = setInterval(updateTimer, 1000);
+            
+            const type = document.getElementById('typeSelect').value;
+            // 重要：確保 currentSymbols 只包含當前選擇的種類
+            const selectedSet = symbolSets[type];
+            currentSymbols = (customImages.length > 0) ? [...customImages, ...selectedSet] : [...selectedSet];
+            
+            dobbleOrder = parseInt(document.getElementById('orderSelect').value);
+            allGeneratedCards = generateDeck();
+            score = 0;
+            updateScoreUI();
+            nextRound();
+        }
+
+        function updateTimer() {
+            const diff = Math.floor((Date.now() - gameStartTime) / 1000);
+            const m = Math.floor(diff / 60).toString().padStart(2, '0');
+            const s = (diff % 60).toString().padStart(2, '0');
+            document.getElementById('statTimer').innerText = `${m}:${s}`;
+        }
+
+        function nextRound() {
+            const idx1 = Math.floor(Math.random() * allGeneratedCards.length);
+            let idx2;
+            do { idx2 = Math.floor(Math.random() * allGeneratedCards.length); } while (idx1 === idx2);
+
+            currentPairs = [
+                drawCardOnCanvas(ctx1, allGeneratedCards[idx1]),
+                drawCardOnCanvas(ctx2, allGeneratedCards[idx2])
+            ];
+            
+            document.getElementById('messageBox').innerText = "Comparing Symbols";
+            document.getElementById('messageBox').classList.remove('text-green-500');
+        }
+
+        function checkClick(e, canvasIdx) {
+            const canvas = canvasIdx === 0 ? canvas1 : canvas2;
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+            
+            const clickedItem = currentPairs[canvasIdx].find(item => {
+                const dist = Math.sqrt((item.x - x)**2 + (item.y - y)**2);
+                return dist < item.size * 0.75; 
+            });
+
+            if (clickedItem) {
+                const otherIdx = 1 - canvasIdx;
+                const matchInOther = currentPairs[otherIdx].find(it => it.symbolIdx === clickedItem.symbolIdx);
+                
+                if (matchInOther) {
+                    handleSuccess(clickedItem, matchInOther);
+                } else {
+                    handleError(canvasIdx);
+                }
+            }
+        }
+
+        function handleSuccess(item1, item2) {
+            score++;
+            updateScoreUI();
+            showRing(0, item1);
+            showRing(1, item2);
+            document.getElementById('messageBox').innerText = "Matched!";
+            document.getElementById('messageBox').classList.add('text-green-500');
+            setTimeout(nextRound, 700);
+        }
+
+        function showRing(canvasIdx, item) {
+            const container = document.getElementById(`container${canvasIdx + 1}`);
+            const canvas = document.getElementById(`card${canvasIdx + 1}`);
+            const rect = canvas.getBoundingClientRect();
+            const scale = rect.width / canvas.width;
+            const ring = document.createElement('div');
+            ring.className = 'match-ring';
+            const displaySize = (item.size * 2.2) * scale;
+            ring.style.width = displaySize + 'px';
+            ring.style.height = displaySize + 'px';
+            ring.style.left = (item.x * scale - displaySize / 2) + 'px';
+            ring.style.top = (item.y * scale - displaySize / 2) + 'px';
+            container.appendChild(ring);
+            setTimeout(() => ring.remove(), 600);
+        }
+
+        function handleError(idx) {
+            const container = document.getElementById(`container${idx + 1}`);
+            container.classList.add('error-shake');
+            document.getElementById('messageBox').innerText = "Try Again";
+            setTimeout(() => container.classList.remove('error-shake'), 400);
+        }
+
+        function updateScoreUI() {
+            document.getElementById('statScore').innerText = score;
+        }
+
+        function setShape(s) {
+            shape = s;
+            const isCircle = s === 'circle';
+            [canvas1, canvas2].forEach(c => {
+                c.className = isCircle ? 'rounded-full' : 'rounded-[32px]';
+            });
+            document.getElementById('btnCircle').className = isCircle ? "flex-1 py-3 rounded-xl text-xs font-bold bg-white shadow-sm text-blue-600" : "flex-1 py-3 rounded-xl text-xs font-bold text-slate-400";
+            document.getElementById('btnSquare').className = !isCircle ? "flex-1 py-3 rounded-xl text-xs font-bold bg-white shadow-sm text-blue-600" : "flex-1 py-3 rounded-xl text-xs font-bold text-slate-400";
+        }
+
+        function openPdfPreview() {
+            const modal = document.getElementById('pdfPreviewModal');
+            const container = document.getElementById('previewPagesContainer');
+            container.innerHTML = '';
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+
+            const pCanvas = document.getElementById('pdfCanvas');
+            const pCtx = pCanvas.getContext('2d');
+            const totalCards = allGeneratedCards.length;
+            const totalPages = Math.ceil(totalCards / 6);
+
+            for (let p = 0; p < totalPages; p++) {
+                const pageDiv = document.createElement('div');
+                pageDiv.className = 'pdf-page-preview';
+                
+                for (let i = 0; i < 6; i++) {
+                    const cardIdx = p * 6 + i;
+                    const cardWrap = document.createElement('div');
+                    cardWrap.className = 'pdf-card-preview';
+                    
+                    if (cardIdx < totalCards) {
+                        const img = document.createElement('img');
+                        pCtx.fillStyle = "white";
+                        pCtx.fillRect(0, 0, 600, 600);
+                        drawCardOnCanvas(pCtx, allGeneratedCards[cardIdx], 600);
+                        img.src = pCanvas.toDataURL('image/png');
+                        img.style.width = '100%';
+                        img.style.borderRadius = shape === 'circle' ? '50%' : '15%';
+                        cardWrap.appendChild(img);
+                    }
+                    pageDiv.appendChild(cardWrap);
+                }
+                container.appendChild(pageDiv);
+            }
+        }
+
+        function closePdfPreview() {
+            document.getElementById('pdfPreviewModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        async function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            const pCanvas = document.getElementById('pdfCanvas');
+            const pCtx = pCanvas.getContext('2d');
+            const cardSizeMM = 80; 
+            const margin = 15;
+            
+            for (let i = 0; i < allGeneratedCards.length; i++) {
+                pCtx.fillStyle = "white";
+                pCtx.fillRect(0, 0, 600, 600);
+                drawCardOnCanvas(pCtx, allGeneratedCards[i], 600);
+                const imgData = pCanvas.toDataURL('image/png');
+                const x = (i % 2 === 0) ? margin : margin + cardSizeMM + 10;
+                const row = Math.floor((i % 6) / 2);
+                const y = margin + row * (cardSizeMM + 10);
+                doc.setDrawColor(240, 240, 240);
+                if (shape === 'circle') doc.ellipse(x + cardSizeMM/2, y + cardSizeMM/2, cardSizeMM/2, cardSizeMM/2);
+                else doc.rect(x, y, cardSizeMM, cardSizeMM);
+                doc.addImage(imgData, 'PNG', x, y, cardSizeMM, cardSizeMM);
+                if ((i + 1) % 6 === 0 && i < allGeneratedCards.length - 1) doc.addPage();
+            }
+            doc.save('find-match-cards.pdf');
+            closePdfPreview();
+        }
+
+        document.getElementById('imageUpload').addEventListener('change', function(e) {
+            const files = e.target.files;
+            if (files.length === 0) return;
+            const previewContainer = document.getElementById('previewContainer');
+            previewContainer.innerHTML = ''; 
+            customImages = [];
+            let loaded = 0;
+            for (let file of files) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        customImages.push(img);
+                        const thumb = document.createElement('img');
+                        thumb.src = ev.target.result;
+                        thumb.className = 'preview-thumb';
+                        previewContainer.appendChild(thumb);
+                        loaded++;
+                        if (loaded === files.length) startGame();
+                    };
+                    img.src = ev.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        canvas1.addEventListener('click', (e) => checkClick(e, 0));
+        canvas2.addEventListener('click', (e) => checkClick(e, 1));
+        window.onload = startGame;
+    </script>
+</body>
+</html>
