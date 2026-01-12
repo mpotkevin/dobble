@@ -43,12 +43,36 @@
             border: 1px solid rgba(255, 255, 255, 0.5);
         }
 
+        .thumb-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
         .preview-thumb {
-            width: 36px;
-            height: 36px;
+            width: 48px;
+            height: 48px;
             object-fit: cover;
-            border-radius: 6px;
+            border-radius: 8px;
             border: 1px solid #e2e8f0;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: #ef4444;
+            color: white;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 20;
         }
 
         .error-shake {
@@ -92,15 +116,13 @@
 <body class="text-slate-900">
 
     <div class="max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-8">
-        <!-- 頂部標題 -->
         <header class="mb-6 text-center md:text-left">
             <h1 class="text-3xl font-extrabold tracking-tight text-slate-900">找相同桌遊產生器</h1>
-            <p class="text-slate-500 text-sm mt-1 text-center md:text-left">多樣化圖案設定與自訂計時模式</p>
+            <p class="text-slate-500 text-sm mt-1 text-center md:text-left">數學保證正確配對版本</p>
         </header>
 
         <div class="grid grid-cols-1 xl:grid-cols-4 gap-8 items-start">
             
-            <!-- 設定面板 -->
             <aside id="settingsPanel" class="xl:col-span-1 space-y-4">
                 <div class="setting-card p-6 rounded-3xl shadow-sm border border-slate-200">
                     <div class="flex justify-between items-center mb-5 border-b border-slate-100 pb-3">
@@ -110,7 +132,7 @@
                             </svg>
                             遊戲設定
                         </h3>
-                        <button onclick="toggleSettings()" class="text-slate-400 hover:text-blue-500 transition-colors p-1" title="收合設定">
+                        <button onclick="toggleSettings()" class="text-slate-400 hover:text-blue-500 transition-colors p-1">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg>
                         </button>
                     </div>
@@ -129,12 +151,12 @@
                                 </section>
                                 <section>
                                     <label class="text-[10px] font-bold mb-1.5 block text-slate-500 uppercase">圖案數量</label>
-                                    <select id="orderSelect" onchange="startGame()" class="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none">
+                                    <select id="orderSelect" onchange="updateUploadStatus(); startGame();" class="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none">
                                         <option value="2">3 個</option>
                                         <option value="3" selected>4 個</option>
                                         <option value="4">5 個</option>
                                         <option value="5">6 個</option>
-                                        <option value="6">7 個</option>
+                                        <!-- 移除 7 個 (n=6)，因為數學上無法保證完美配對 -->
                                         <option value="7">8 個</option>
                                     </select>
                                 </section>
@@ -151,7 +173,7 @@
 
                         <section>
                             <label class="text-[10px] font-bold mb-1.5 block text-slate-500 uppercase">管理與列印</label>
-                            <div class="grid grid-cols-2 gap-3">
+                            <div class="grid grid-cols-2 gap-3 mb-2">
                                 <input type="file" id="imageUpload" multiple accept="image/*" class="hidden">
                                 <label for="imageUpload" class="flex items-center justify-center gap-2 h-11 bg-blue-50 border border-blue-100 rounded-xl cursor-pointer hover:bg-blue-100 transition-colors text-xs font-bold text-blue-600">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
@@ -162,6 +184,9 @@
                                     產生 PDF
                                 </button>
                             </div>
+                            <div id="uploadStatusHint" class="bg-blue-50 p-3 rounded-xl text-[10px] text-blue-700 leading-relaxed font-medium">
+                                正在計算圖片...
+                            </div>
                             <div id="previewContainer" class="flex flex-wrap gap-2 mt-4 empty:hidden"></div>
                         </section>
                     </div>
@@ -169,7 +194,6 @@
             </aside>
 
             <main id="gameMain" class="xl:col-span-3 space-y-4">
-                <!-- 狀態資訊欄 -->
                 <div class="bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 flex flex-wrap justify-center md:justify-between items-center gap-4">
                     <div class="flex items-center gap-4 md:gap-8">
                         <button id="expandBtn" onclick="toggleSettings()" class="hidden text-slate-400 hover:text-blue-500 transition-colors p-2 bg-slate-50 rounded-xl border border-slate-100">
@@ -186,7 +210,6 @@
                         </div>
                     </div>
                     
-                    <!-- 計時模式選擇與開始按鈕 -->
                     <div class="flex items-center gap-2">
                         <div class="flex items-center bg-slate-50 border border-slate-200 rounded-xl overflow-hidden">
                             <select id="durationSelect" onchange="updateTimerModeLabel()" class="bg-transparent h-11 px-3 text-xs font-bold focus:outline-none transition-all">
@@ -196,7 +219,6 @@
                                 <option value="90">倒數 90 秒</option>
                                 <option value="custom">自訂</option>
                             </select>
-                            <!-- 自訂時間輸入框：僅在選擇自訂時顯示 -->
                             <input type="number" id="customDurationInput" placeholder="秒數" class="hidden w-16 h-11 bg-white border-l border-slate-200 px-2 text-xs font-bold text-center focus:outline-none" min="1" max="999">
                         </div>
                         <button onclick="startGame()" class="bg-slate-900 text-white h-11 px-8 rounded-2xl font-bold hover:bg-blue-600 transition-all shadow-sm active:scale-95 text-xs text-center">
@@ -205,7 +227,6 @@
                     </div>
                 </div>
 
-                <!-- 遊戲主體 -->
                 <div class="bg-white rounded-[2rem] md:rounded-[3.5rem] p-6 md:p-14 shadow-sm border border-slate-100 relative overflow-hidden">
                     <div id="gameUI" class="flex flex-col items-center w-full">
                         <div id="messageBox" class="mb-10 text-[10px] font-bold text-slate-300 tracking-[0.5em] uppercase text-center font-bold">Comparing Symbols</div>
@@ -235,7 +256,6 @@
         </div>
     </div>
 
-    <!-- PDF 預覽模態視窗 -->
     <div id="pdfPreviewModal">
         <div class="max-w-5xl mx-auto flex flex-col items-center">
             <div class="w-full flex justify-between items-center mb-6 sticky top-0 bg-black bg-opacity-80 py-4 z-50 rounded-b-xl px-4 md:px-6">
@@ -249,7 +269,6 @@
         </div>
     </div>
 
-    <!-- 遊戲結果模態視窗 -->
     <div id="resultModal">
         <div class="h-full flex items-center justify-center">
             <div class="bg-white rounded-[2.5rem] p-10 max-w-sm w-full text-center shadow-2xl">
@@ -273,13 +292,13 @@
         // --- 核心變數 ---
         let dobbleOrder = 3; 
         let shape = 'circle';
-        let customImages = [];
+        let customImages = []; // 結構: {id: timestamp, img: HTMLImageElement, src: string}
         let isSettingsCollapsed = false;
         let isGameOver = false;
         
         const symbolSets = {
-            emoji: ["🍎","🍌","🍇","🍓","🍒","🍍","開心","🥝","🍋","🍐","🍑","🍉","🌽","🍄","🥑","🍆","🍔","🍕","🍟","🍦","🍩","⚽","🏀","🎨","🎬","🚗","🚀","🛸","💎","🌈","🔥","⭐","🌙","☀️","🍀","🐱","🐶","🦊","🦁","🐰","🦄","🦜","🐠","🐙","🦋","🎸","⌚","📱","💡","🔑","🎁","🎈","🧸","🔋","⚙️","⚖️","🧱"],
-            number: Array.from({length: 60}, (_, i) => (i + 1).toString()),
+            emoji: ["🍎","🍌","🍇","🍓","🍒","🍍","😀","🥝","🍋","🍐","🍑","🍉","🌽","🍄","🥑","🍆","🍔","🍕","🍟","🍦","🍩","⚽","🏀","🎨","🎬","🚗","🚀","🛸","💎","🌈","🔥","⭐","🌙","☀️","🍀","🐱","🐶","🦊","🦁","🐰","🦄","🦜","🐠","🐙","🦋","🎸","⌚","📱","💡","🔑","🎁","🎈","🧸","🔋","⚙️","⚖️","🧱","🍦","🍭","🍪","🥨","🍩","🍣","🍇","🍎","🍉","🍒","🍊","🍋","🍍","🍓","🍑"],
+            number: Array.from({length: 64}, (_, i) => (i + 1).toString()),
             chinese: ["一","二","三","四","五","六","七","八","九","十","天","地","人","山","水","火","風","木","石","金","日","月","星","雲","雨","雪","電","大","小","多","少","長","短","高","低","左","右","前","後","明","暗","春","夏","秋","冬","花","草","魚","鳥","馬","羊","牛","田"],
             english: ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"]
         };
@@ -312,7 +331,54 @@
             }
         }
 
-        // 當下拉選單改變時，同步更新標籤與顯示
+        /**
+         * 更新上傳狀態提示與預覽畫面
+         */
+        function updateUploadStatus() {
+            const n = parseInt(document.getElementById('orderSelect').value);
+            const patternsPerCard = n + 1;
+            const requiredTotal = n * n + n + 1;
+            const uploadedCount = customImages.length;
+            const hintBox = document.getElementById('uploadStatusHint');
+            const previewContainer = document.getElementById('previewContainer');
+
+            // 更新提示字
+            let msg = `<strong>${patternsPerCard} 個圖案版本：</strong><br>`;
+            msg += `需上傳 <strong>${requiredTotal}</strong> 張不重複圖片。<br>`;
+            msg += `目前已累計：<span class="${uploadedCount >= requiredTotal ? 'text-green-600 font-bold' : 'text-blue-600'}">${uploadedCount}</span> 張。`;
+
+            if (uploadedCount > 0 && uploadedCount < requiredTotal) {
+                msg += `<br><span class="text-orange-600 italic">不足部分將僅使用 Emoji 補位。</span>`;
+            }
+            hintBox.innerHTML = msg;
+
+            // 更新預覽縮圖
+            previewContainer.innerHTML = '';
+            customImages.forEach((item, index) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'thumb-wrapper';
+                
+                const img = document.createElement('img');
+                img.src = item.src;
+                img.className = 'preview-thumb';
+                
+                const del = document.createElement('div');
+                del.className = 'delete-btn';
+                del.innerHTML = '✕';
+                del.onclick = () => deleteImage(index);
+                
+                wrapper.appendChild(img);
+                wrapper.appendChild(del);
+                previewContainer.appendChild(wrapper);
+            });
+        }
+
+        function deleteImage(index) {
+            customImages.splice(index, 1);
+            updateUploadStatus();
+            startGame();
+        }
+
         function updateTimerModeLabel() {
             const durationSelect = document.getElementById('durationSelect');
             const durationVal = durationSelect.value;
@@ -343,11 +409,14 @@
         function generateDeck() {
             let n = dobbleOrder; 
             let deck = [];
+            // Dobble Algorithm (Finite Projective Plane)
+            // 第一組卡片
             for (let i = 0; i <= n; i++) {
                 let card = [0];
                 for (let j = 0; j < n; j++) card.push(1 + i * n + j);
                 deck.push(card);
             }
+            // 其餘卡片
             for (let i = 0; i < n; i++) {
                 for (let j = 0; j < n; j++) {
                     let card = [i + 1];
@@ -453,8 +522,10 @@
             updateScoreUI();
             
             const type = document.getElementById('typeSelect').value;
-            const selectedSet = symbolSets[type];
-            currentSymbols = (customImages.length > 0) ? [...customImages, ...selectedSet] : [...selectedSet];
+            // 補位邏輯：如果自訂圖案不足，強制僅使用內建 Emoji 補足，絕不混用國字
+            const uploadedImgs = customImages.map(it => it.img);
+            const fillerEmoji = symbolSets.emoji;
+            currentSymbols = (uploadedImgs.length > 0) ? [...uploadedImgs, ...fillerEmoji] : [...symbolSets[type]];
             
             dobbleOrder = parseInt(document.getElementById('orderSelect').value);
             allGeneratedCards = generateDeck();
@@ -464,7 +535,7 @@
 
             if (durationVal === "custom") {
                 const customInput = document.getElementById('customDurationInput');
-                duration = parseInt(customInput.value) || 60; // 如果沒輸入，預設 60 秒
+                duration = parseInt(customInput.value) || 60;
             } else {
                 duration = parseInt(durationVal);
             }
@@ -676,33 +747,41 @@
         document.getElementById('imageUpload').addEventListener('change', function(e) {
             const files = e.target.files;
             if (files.length === 0) return;
-            const previewContainer = document.getElementById('previewContainer');
-            previewContainer.innerHTML = ''; 
-            customImages = [];
-            let loaded = 0;
-            for (let file of files) {
+            
+            let filesArray = Array.from(files);
+            let loadedCount = 0;
+
+            filesArray.forEach(file => {
                 const reader = new FileReader();
                 reader.onload = (ev) => {
                     const img = new Image();
                     img.onload = () => {
-                        customImages.push(img);
-                        const thumb = document.createElement('img');
-                        thumb.src = ev.target.result;
-                        thumb.className = 'preview-thumb';
-                        previewContainer.appendChild(thumb);
-                        loaded++;
-                        if (loaded === files.length) startGame();
+                        customImages.push({
+                            id: Date.now() + Math.random(),
+                            img: img,
+                            src: ev.target.result
+                        });
+                        loadedCount++;
+                        if (loadedCount === filesArray.length) {
+                            updateUploadStatus();
+                            startGame();
+                        }
                     };
                     img.src = ev.target.result;
                 };
                 reader.readAsDataURL(file);
-            }
+            });
+            // 重設 input 值以便可以重複選相同檔案
+            e.target.value = '';
         });
 
         canvas1.addEventListener('click', (e) => checkClick(e, 0));
         canvas2.addEventListener('click', (e) => checkClick(e, 1));
         
-        window.onload = startGame;
+        window.onload = function() {
+            updateUploadStatus();
+            startGame();
+        };
     </script>
 </body>
 </html>
