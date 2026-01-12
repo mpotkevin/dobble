@@ -118,7 +118,7 @@
     <div class="max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-8">
         <header class="mb-6 text-center md:text-left">
             <h1 class="text-3xl font-extrabold tracking-tight text-slate-900">找相同桌遊產生器</h1>
-            <p class="text-slate-500 text-sm mt-1 text-center md:text-left">數學保證正確配對版本</p>
+            <p class="text-slate-500 text-sm mt-1 text-center md:text-left">多樣化圖案設定與自訂計時模式</p>
         </header>
 
         <div class="grid grid-cols-1 xl:grid-cols-4 gap-8 items-start">
@@ -156,7 +156,6 @@
                                         <option value="3" selected>4 個</option>
                                         <option value="4">5 個</option>
                                         <option value="5">6 個</option>
-                                        <!-- 移除 7 個 (n=6)，因為數學上無法保證完美配對 -->
                                         <option value="7">8 個</option>
                                     </select>
                                 </section>
@@ -248,9 +247,10 @@
                 </div>
 
                 <footer class="pt-2 text-center">
-                    <div class="text-xs font-medium text-slate-400 inline-flex items-center gap-2 bg-white px-6 py-2.5 rounded-full shadow-sm border border-slate-100">
+                    <a href="https://www.facebook.com/kevin.pptgame" target="_blank" rel="noopener noreferrer" class="text-xs font-medium text-slate-400 hover:text-blue-500 transition-colors inline-flex items-center gap-2 bg-white px-6 py-2.5 rounded-full shadow-sm border border-slate-100 group">
                         <span>設計：職能治療師 - 鄭凱文</span>
-                    </div>
+                        <svg class="w-3 h-3 text-slate-300 group-hover:text-blue-500 transition-colors" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                    </a>
                 </footer>
             </main>
         </div>
@@ -292,12 +292,13 @@
         // --- 核心變數 ---
         let dobbleOrder = 3; 
         let shape = 'circle';
-        let customImages = []; // 結構: {id: timestamp, img: HTMLImageElement, src: string}
+        let customImages = []; 
         let isSettingsCollapsed = false;
         let isGameOver = false;
         
         const symbolSets = {
-            emoji: ["🍎","🍌","🍇","🍓","🍒","🍍","😀","🥝","🍋","🍐","🍑","🍉","🌽","🍄","🥑","🍆","🍔","🍕","🍟","🍦","🍩","⚽","🏀","🎨","🎬","🚗","🚀","🛸","💎","🌈","🔥","⭐","🌙","☀️","🍀","🐱","🐶","🦊","🦁","🐰","🦄","🦜","🐠","🐙","🦋","🎸","⌚","📱","💡","🔑","🎁","🎈","🧸","🔋","⚙️","⚖️","🧱","🍦","🍭","🍪","🥨","🍩","🍣","🍇","🍎","🍉","🍒","🍊","🍋","🍍","🍓","🍑"],
+            // 已徹底修正：移除國字字串，確保全部都是 Emoji 圖案
+            emoji: ["🍎","🍌","🍇","🍓","🍒","🍍","😀","🥝","🍋","🍊","🍑","🍉","🌽","🍄","🥑","🍆","🍔","🍕","🍟","🍦","🍩","⚽","🏀","🎨","🎬","🚗","🚀","🛸","💎","🌈","🔥","⭐","🌙","☀️","🍀","🐱","🐶","🦊","🦁","🐰","🦄","🦜","🐠","🐙","🦋","🎸","⌚","📱","💡","🔑","🎁","🎈","🧸","🔋","⚙️","⚖️","🧱","🍭","🍪","🥨","🍣","🍱","🍢","🍘","🥩","🥗","🍈","🥭","🍏","🍐","🫐","🍅","🫒","🥥","🏈","🏐","🥎","🎾","🏓","🏸","🥊","🥋","🎯","🎮","🎲","🧩","📏"],
             number: Array.from({length: 64}, (_, i) => (i + 1).toString()),
             chinese: ["一","二","三","四","五","六","七","八","九","十","天","地","人","山","水","火","風","木","石","金","日","月","星","雲","雨","雪","電","大","小","多","少","長","短","高","低","左","右","前","後","明","暗","春","夏","秋","冬","花","草","魚","鳥","馬","羊","牛","田"],
             english: ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"]
@@ -331,9 +332,6 @@
             }
         }
 
-        /**
-         * 更新上傳狀態提示與預覽畫面
-         */
         function updateUploadStatus() {
             const n = parseInt(document.getElementById('orderSelect').value);
             const patternsPerCard = n + 1;
@@ -342,7 +340,6 @@
             const hintBox = document.getElementById('uploadStatusHint');
             const previewContainer = document.getElementById('previewContainer');
 
-            // 更新提示字
             let msg = `<strong>${patternsPerCard} 個圖案版本：</strong><br>`;
             msg += `需上傳 <strong>${requiredTotal}</strong> 張不重複圖片。<br>`;
             msg += `目前已累計：<span class="${uploadedCount >= requiredTotal ? 'text-green-600 font-bold' : 'text-blue-600'}">${uploadedCount}</span> 張。`;
@@ -352,7 +349,6 @@
             }
             hintBox.innerHTML = msg;
 
-            // 更新預覽縮圖
             previewContainer.innerHTML = '';
             customImages.forEach((item, index) => {
                 const wrapper = document.createElement('div');
@@ -409,14 +405,11 @@
         function generateDeck() {
             let n = dobbleOrder; 
             let deck = [];
-            // Dobble Algorithm (Finite Projective Plane)
-            // 第一組卡片
             for (let i = 0; i <= n; i++) {
                 let card = [0];
                 for (let j = 0; j < n; j++) card.push(1 + i * n + j);
                 deck.push(card);
             }
-            // 其餘卡片
             for (let i = 0; i < n; i++) {
                 for (let j = 0; j < n; j++) {
                     let card = [i + 1];
@@ -522,7 +515,6 @@
             updateScoreUI();
             
             const type = document.getElementById('typeSelect').value;
-            // 補位邏輯：如果自訂圖案不足，強制僅使用內建 Emoji 補足，絕不混用國字
             const uploadedImgs = customImages.map(it => it.img);
             const fillerEmoji = symbolSets.emoji;
             currentSymbols = (uploadedImgs.length > 0) ? [...uploadedImgs, ...fillerEmoji] : [...symbolSets[type]];
@@ -771,7 +763,6 @@
                 };
                 reader.readAsDataURL(file);
             });
-            // 重設 input 值以便可以重複選相同檔案
             e.target.value = '';
         });
 
