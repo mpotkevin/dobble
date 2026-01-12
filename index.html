@@ -18,7 +18,7 @@
         .canvas-container {
             position: relative;
             width: 100%;
-            max-width: 400px;
+            max-width: 420px;
             aspect-ratio: 1 / 1;
             display: flex;
             justify-content: center;
@@ -34,13 +34,13 @@
             max-width: 100%; 
             height: auto !important;
             display: block;
+            z-index: 10;
         }
 
         .setting-card {
             background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.5);
-            transition: all 0.3s ease;
         }
 
         .preview-thumb {
@@ -49,21 +49,6 @@
             object-fit: cover;
             border-radius: 6px;
             border: 1px solid #e2e8f0;
-        }
-
-        @keyframes ring-expand {
-            0% { transform: scale(0.3); opacity: 0; }
-            30% { opacity: 1; }
-            100% { transform: scale(1.5); opacity: 0; }
-        }
-
-        .match-ring {
-            position: absolute;
-            pointer-events: none;
-            border: 5px solid #22c55e;
-            border-radius: 50%;
-            animation: ring-expand 0.6s ease-out forwards;
-            z-index: 50;
         }
 
         .error-shake {
@@ -76,7 +61,7 @@
             75% { transform: translateX(10px); }
         }
 
-        #pdfPreviewModal {
+        #pdfPreviewModal, #resultModal {
             display: none;
             position: fixed;
             inset: 0;
@@ -100,28 +85,8 @@
             gap: 5mm;
         }
 
-        @media (min-width: 768px) {
-            .pdf-page-preview {
-                padding: 15mm;
-                gap: 10mm;
-            }
-        }
-
-        .pdf-card-preview {
-            border: 1px dashed #ddd;
-            aspect-ratio: 1/1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* 控制設定欄收合的樣式 */
-        #settingsPanel.collapsed {
-            display: none;
-        }
-        #gameMain.expanded {
-            grid-column: span 4 / span 4;
-        }
+        #settingsPanel.collapsed { display: none; }
+        #gameMain.expanded { grid-column: span 4 / span 4; }
     </style>
 </head>
 <body class="text-slate-900">
@@ -130,17 +95,17 @@
         <!-- 頂部標題 -->
         <header class="mb-6 text-center md:text-left">
             <h1 class="text-3xl font-extrabold tracking-tight text-slate-900">找相同桌遊產生器</h1>
-            <p class="text-slate-500 text-sm mt-1">多樣化圖案設定</p>
+            <p class="text-slate-500 text-sm mt-1 text-center md:text-left">多樣化圖案設定與自訂計時模式</p>
         </header>
 
-        <div class="grid grid-cols-1 xl:grid-cols-4 gap-6 items-start">
+        <div class="grid grid-cols-1 xl:grid-cols-4 gap-8 items-start">
             
-            <!-- 左側設定面板 -->
+            <!-- 設定面板 -->
             <aside id="settingsPanel" class="xl:col-span-1 space-y-4">
                 <div class="setting-card p-6 rounded-3xl shadow-sm border border-slate-200">
                     <div class="flex justify-between items-center mb-5 border-b border-slate-100 pb-3">
-                        <h3 class="text-xl font-bold text-slate-700 tracking-tight flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <h3 class="text-lg font-bold text-slate-700 tracking-tight flex items-center gap-2 uppercase">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37a1.724 1.724 0 002.572-1.065z" />
                             </svg>
                             遊戲設定
@@ -166,9 +131,9 @@
                                     <label class="text-[10px] font-bold mb-1.5 block text-slate-500 uppercase">圖案數量</label>
                                     <select id="orderSelect" onchange="startGame()" class="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none">
                                         <option value="2">3 個</option>
-                                        <option value="3">4 個</option>
+                                        <option value="3" selected>4 個</option>
                                         <option value="4">5 個</option>
-                                        <option value="5" selected>6 個</option>
+                                        <option value="5">6 個</option>
                                         <option value="6">7 個</option>
                                         <option value="7">8 個</option>
                                     </select>
@@ -185,7 +150,7 @@
                         </div>
 
                         <section>
-                            <label class="text-[10px] font-bold mb-1.5 block text-slate-500 uppercase font-bold">管理與列印</label>
+                            <label class="text-[10px] font-bold mb-1.5 block text-slate-500 uppercase">管理與列印</label>
                             <div class="grid grid-cols-2 gap-3">
                                 <input type="file" id="imageUpload" multiple accept="image/*" class="hidden">
                                 <label for="imageUpload" class="flex items-center justify-center gap-2 h-11 bg-blue-50 border border-blue-100 rounded-xl cursor-pointer hover:bg-blue-100 transition-colors text-xs font-bold text-blue-600">
@@ -193,7 +158,7 @@
                                     上傳圖片
                                 </label>
                                 <button onclick="openPdfPreview()" class="flex items-center justify-center gap-2 h-11 bg-slate-50 border border-slate-200 rounded-xl font-bold hover:bg-slate-100 hover:text-blue-600 hover:border-blue-200 transition-all text-xs text-slate-500 shadow-sm group">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 h-4 transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
                                     產生 PDF
                                 </button>
                             </div>
@@ -203,45 +168,57 @@
                 </div>
             </aside>
 
-            <!-- 右側主要區域 -->
             <main id="gameMain" class="xl:col-span-3 space-y-4">
-                <!-- 狀態資訊欄 (含收合後的展開按鈕) -->
+                <!-- 狀態資訊欄 -->
                 <div class="bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 flex flex-wrap justify-center md:justify-between items-center gap-4">
-                    <div class="flex items-center gap-4 md:gap-6">
-                        <button id="expandBtn" onclick="toggleSettings()" class="hidden text-slate-400 hover:text-blue-500 transition-colors p-2 bg-slate-50 rounded-xl border border-slate-100" title="展開設定">
+                    <div class="flex items-center gap-4 md:gap-8">
+                        <button id="expandBtn" onclick="toggleSettings()" class="hidden text-slate-400 hover:text-blue-500 transition-colors p-2 bg-slate-50 rounded-xl border border-slate-100">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
                         </button>
-                        <div class="flex flex-col">
-                            <span class="text-[9px] text-slate-400 uppercase font-bold tracking-[0.2em]">得分</span>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[9px] text-slate-400 uppercase font-bold tracking-[0.2em]">目前得分</span>
                             <span id="statScore" class="text-2xl font-black text-blue-600 leading-none">0</span>
                         </div>
                         <div class="h-8 w-px bg-slate-100"></div>
-                        <div class="flex flex-col">
-                            <span class="text-[9px] text-slate-400 uppercase font-bold tracking-[0.2em]">計時</span>
+                        <div class="flex flex-col items-center">
+                            <span id="timerLabel" class="text-[9px] text-slate-400 uppercase font-bold tracking-[0.2em]">累計時間</span>
                             <span id="statTimer" class="text-2xl font-black text-slate-700 font-mono leading-none">00:00</span>
                         </div>
                     </div>
-                    <button onclick="startGame()" class="bg-slate-900 text-white h-11 px-8 rounded-2xl font-bold hover:bg-blue-600 transition-all shadow-sm active:scale-95 text-xs">
-                        重啟遊戲
-                    </button>
+                    
+                    <!-- 計時模式選擇與開始按鈕 -->
+                    <div class="flex items-center gap-2">
+                        <div class="flex items-center bg-slate-50 border border-slate-200 rounded-xl overflow-hidden">
+                            <select id="durationSelect" onchange="updateTimerModeLabel()" class="bg-transparent h-11 px-3 text-xs font-bold focus:outline-none transition-all">
+                                <option value="0" selected>累計時間</option>
+                                <option value="30">倒數 30 秒</option>
+                                <option value="60">倒數 60 秒</option>
+                                <option value="90">倒數 90 秒</option>
+                                <option value="custom">自訂</option>
+                            </select>
+                            <!-- 自訂時間輸入框：僅在選擇自訂時顯示 -->
+                            <input type="number" id="customDurationInput" placeholder="秒數" class="hidden w-16 h-11 bg-white border-l border-slate-200 px-2 text-xs font-bold text-center focus:outline-none" min="1" max="999">
+                        </div>
+                        <button onclick="startGame()" class="bg-slate-900 text-white h-11 px-8 rounded-2xl font-bold hover:bg-blue-600 transition-all shadow-sm active:scale-95 text-xs text-center">
+                            開始/重啟
+                        </button>
+                    </div>
                 </div>
 
                 <!-- 遊戲主體 -->
                 <div class="bg-white rounded-[2rem] md:rounded-[3.5rem] p-6 md:p-14 shadow-sm border border-slate-100 relative overflow-hidden">
                     <div id="gameUI" class="flex flex-col items-center w-full">
-                        <div id="messageBox" class="mb-6 md:mb-10 text-[10px] font-bold text-slate-300 tracking-[0.5em] uppercase text-center font-bold">Comparing Symbols</div>
+                        <div id="messageBox" class="mb-10 text-[10px] font-bold text-slate-300 tracking-[0.5em] uppercase text-center font-bold">Comparing Symbols</div>
                         
-                        <div class="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16 w-full max-w-5xl relative z-10">
+                        <div class="flex flex-col md:flex-row items-center justify-center gap-10 md:gap-20 w-full max-w-5xl relative z-10">
                             <div id="container1" class="canvas-container">
                                 <canvas id="card1" width="450" height="450" class="rounded-full"></canvas>
                             </div>
-
                             <div class="flex flex-row md:flex-col items-center gap-4 opacity-10">
                                 <div class="w-2 h-2 bg-blue-600 rounded-full"></div>
                                 <div class="w-24 h-0.5 md:w-0.5 md:h-32 bg-slate-400 rounded-full"></div>
                                 <div class="w-2 h-2 bg-blue-600 rounded-full"></div>
                             </div>
-
                             <div id="container2" class="canvas-container">
                                 <canvas id="card2" width="450" height="450" class="rounded-full"></canvas>
                             </div>
@@ -249,18 +226,16 @@
                     </div>
                 </div>
 
-                <!-- 頁尾署名 -->
                 <footer class="pt-2 text-center">
-                    <a href="https://www.facebook.com/kevin.pptgame" target="_blank" class="text-xs font-medium text-slate-400 hover:text-blue-500 transition-colors inline-flex items-center gap-2 bg-white px-6 py-2.5 rounded-full shadow-sm border border-slate-100">
+                    <div class="text-xs font-medium text-slate-400 inline-flex items-center gap-2 bg-white px-6 py-2.5 rounded-full shadow-sm border border-slate-100">
                         <span>設計：職能治療師 - 鄭凱文</span>
-                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                    </a>
+                    </div>
                 </footer>
             </main>
         </div>
     </div>
 
-    <!-- PDF 預覽彈窗 -->
+    <!-- PDF 預覽模態視窗 -->
     <div id="pdfPreviewModal">
         <div class="max-w-5xl mx-auto flex flex-col items-center">
             <div class="w-full flex justify-between items-center mb-6 sticky top-0 bg-black bg-opacity-80 py-4 z-50 rounded-b-xl px-4 md:px-6">
@@ -274,17 +249,36 @@
         </div>
     </div>
 
+    <!-- 遊戲結果模態視窗 -->
+    <div id="resultModal">
+        <div class="h-full flex items-center justify-center">
+            <div class="bg-white rounded-[2.5rem] p-10 max-w-sm w-full text-center shadow-2xl">
+                <div class="w-20 h-20 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-black mb-2">挑戰結束！</h2>
+                <p class="text-slate-500 mb-6" id="resultDesc">您在時間內答對了</p>
+                <div class="text-6xl font-black text-blue-600 mb-8" id="finalScore">0</div>
+                <button onclick="closeResultModal(); startGame();" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold hover:bg-blue-600 transition-all shadow-lg active:scale-95">再挑戰一次</button>
+                <button onclick="closeResultModal();" class="w-full mt-3 text-slate-400 font-bold py-2 hover:text-slate-600 transition-all">關閉</button>
+            </div>
+        </div>
+    </div>
+
     <canvas id="pdfCanvas" width="600" height="600" style="display:none;"></canvas>
 
     <script>
         // --- 核心變數 ---
-        let dobbleOrder = 5; 
+        let dobbleOrder = 3; 
         let shape = 'circle';
         let customImages = [];
         let isSettingsCollapsed = false;
+        let isGameOver = false;
         
         const symbolSets = {
-            emoji: ["🍎","🍌","🍇","🍓","🍒","🍍","🥝","🍋","🍐","🍑","🍉","🌽","🍄","🥑","🍆","🍔","🍕","🍟","🍦","🍩","⚽","🏀","🎨","🎬","🚗","🚀","🛸","💎","🌈","🔥","⭐","🌙","☀️","🍀","🐱","🐶","🦊","🦁","🐰","🦄","🦜","🐠","🐙","🦋","🎸","⌚","📱","💡","🔑","🎁","🎈","🧸","🔋","⚙️","⚖️","🧱"],
+            emoji: ["🍎","🍌","🍇","🍓","🍒","🍍","開心","🥝","🍋","🍐","🍑","🍉","🌽","🍄","🥑","🍆","🍔","🍕","🍟","🍦","🍩","⚽","🏀","🎨","🎬","🚗","🚀","🛸","💎","🌈","🔥","⭐","🌙","☀️","🍀","🐱","🐶","🦊","🦁","🐰","🦄","🦜","🐠","🐙","🦋","🎸","⌚","📱","💡","🔑","🎁","🎈","🧸","🔋","⚙️","⚖️","🧱"],
             number: Array.from({length: 60}, (_, i) => (i + 1).toString()),
             chinese: ["一","二","三","四","五","六","七","八","九","十","天","地","人","山","水","火","風","木","石","金","日","月","星","雲","雨","雪","電","大","小","多","少","長","短","高","低","左","右","前","後","明","暗","春","夏","秋","冬","花","草","魚","鳥","馬","羊","牛","田"],
             english: ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"]
@@ -292,9 +286,9 @@
 
         let currentSymbols = [];
         let allGeneratedCards = [];
-        let currentPairs = [];
+        let cardStates = [null, null]; 
         let score = 0;
-        let gameStartTime = null;
+        let timerValue = 0; 
         let timerInterval = null;
 
         const canvas1 = document.getElementById('card1');
@@ -307,7 +301,6 @@
             const panel = document.getElementById('settingsPanel');
             const main = document.getElementById('gameMain');
             const expandBtn = document.getElementById('expandBtn');
-
             if (isSettingsCollapsed) {
                 panel.classList.add('collapsed');
                 main.classList.add('expanded');
@@ -317,15 +310,33 @@
                 main.classList.remove('expanded');
                 expandBtn.classList.add('hidden');
             }
-            // 強制重新繪製畫布以適應新的容器大小
-            setTimeout(refreshCanvases, 350);
         }
 
-        // 刷新當前畫布顯示
-        function refreshCanvases() {
-            if (currentPairs.length === 2) {
-                const idx1 = Math.floor(Math.random()); // 這裡只是觸發重新計算座標，但不換牌
-                // 目前不需要特別重新計算數據，主要是 showRing 的 rect 會正確更新
+        // 當下拉選單改變時，同步更新標籤與顯示
+        function updateTimerModeLabel() {
+            const durationSelect = document.getElementById('durationSelect');
+            const durationVal = durationSelect.value;
+            const label = document.getElementById('timerLabel');
+            const timerDisplay = document.getElementById('statTimer');
+            const customInput = document.getElementById('customDurationInput');
+            
+            if (durationVal === "custom") {
+                label.innerText = "剩餘時間";
+                timerDisplay.innerText = "--:--";
+                customInput.classList.remove('hidden');
+                customInput.focus();
+            } else {
+                customInput.classList.add('hidden');
+                const duration = parseInt(durationVal);
+                if (duration > 0) {
+                    label.innerText = "剩餘時間";
+                    const m = Math.floor(duration / 60).toString().padStart(2, '0');
+                    const s = (duration % 60).toString().padStart(2, '0');
+                    timerDisplay.innerText = `${m}:${s}`;
+                } else {
+                    label.innerText = "累計時間";
+                    timerDisplay.innerText = "00:00";
+                }
             }
         }
 
@@ -349,10 +360,12 @@
 
         function getGeometricPoints(count, radius, centerX, centerY) {
             const points = [];
+            const safeRadius = radius * 0.68; 
+
             if (count === 3) {
                 for (let i = 0; i < 3; i++) {
                     const angle = (i * 120 - 90) * (Math.PI / 180);
-                    points.push({ x: centerX + radius * 0.65 * Math.cos(angle), y: centerY + radius * 0.65 * Math.sin(angle) });
+                    points.push({ x: centerX + safeRadius * Math.cos(angle), y: centerY + safeRadius * Math.sin(angle) });
                 }
             } else {
                 points.push({ x: centerX, y: centerY });
@@ -360,7 +373,7 @@
                 const angleStep = 360 / ringCount;
                 for (let i = 0; i < ringCount; i++) {
                     const angle = (i * angleStep - 90) * (Math.PI / 180);
-                    points.push({ x: centerX + radius * 0.72 * Math.cos(angle), y: centerY + radius * 0.72 * Math.sin(angle) });
+                    points.push({ x: centerX + safeRadius * 1.05 * Math.cos(angle), y: centerY + safeRadius * 1.05 * Math.sin(angle) });
                 }
             }
             const globalRotation = Math.random() * Math.PI * 2;
@@ -374,46 +387,70 @@
             });
         }
 
-        function drawCardOnCanvas(ctx, cardData, size = 450) {
+        function createCardState(cardData, size = 450) {
             const centerX = size / 2;
             const centerY = size / 2;
             const radius = size / 2;
-            ctx.clearRect(0, 0, size, size);
-            
-            const items = [];
             const points = getGeometricPoints(cardData.length, radius, centerX, centerY);
-
-            cardData.forEach((symbolIdx, i) => {
+            
+            return cardData.map((symbolIdx, i) => {
                 const pos = points[i];
                 const scale = 0.95 + Math.random() * 0.3;
-                const fontSize = (size / 7) * scale;
-                const rotation = Math.random() * Math.PI * 2;
-                const symbol = currentSymbols[symbolIdx % currentSymbols.length];
+                return {
+                    x: pos.x,
+                    y: pos.y,
+                    symbolIdx: symbolIdx,
+                    fontSize: (size / 7) * scale,
+                    rotation: Math.random() * Math.PI * 2,
+                    symbol: currentSymbols[symbolIdx % currentSymbols.length]
+                };
+            });
+        }
 
+        function drawCardFromState(ctx, items, size = 450, highlightIdx = null, ringScale = 1) {
+            ctx.save();
+            ctx.clearRect(0, 0, size, size);
+            
+            items.forEach(item => {
                 ctx.save();
-                ctx.translate(pos.x, pos.y);
-                ctx.rotate(rotation);
+                ctx.translate(item.x, item.y);
+                ctx.rotate(item.rotation);
                 
-                if (typeof symbol === 'string') {
-                    ctx.font = `bold ${fontSize}px Arial, "Noto Sans TC"`;
+                if (typeof item.symbol === 'string') {
+                    ctx.font = `bold ${item.fontSize}px Arial, "Noto Sans TC"`;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
                     ctx.fillStyle = '#1e293b';
-                    ctx.fillText(symbol, 0, 0);
-                } else if (symbol instanceof HTMLImageElement) {
-                    const imgSize = fontSize * 1.3;
-                    ctx.drawImage(symbol, -imgSize/2, -imgSize/2, imgSize, imgSize);
+                    ctx.fillText(item.symbol, 0, 0);
+                } else if (item.symbol instanceof HTMLImageElement) {
+                    const imgSize = item.fontSize * 1.3;
+                    ctx.drawImage(item.symbol, -imgSize/2, -imgSize/2, imgSize, imgSize);
                 }
                 ctx.restore();
-                items.push({ x: pos.x, y: pos.y, size: fontSize, symbolIdx });
             });
-            return items;
+
+            if (highlightIdx !== null) {
+                const highlightItem = items.find(it => it.symbolIdx === highlightIdx);
+                if (highlightItem) {
+                    ctx.save();
+                    ctx.globalCompositeOperation = 'source-over';
+                    ctx.beginPath();
+                    const safeRingScale = Math.min(ringScale, 1.1); 
+                    ctx.arc(highlightItem.x, highlightItem.y, highlightItem.fontSize * safeRingScale * 0.9, 0, Math.PI * 2);
+                    ctx.strokeStyle = '#22c55e'; 
+                    ctx.lineWidth = 10; 
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+            ctx.restore();
         }
 
         function startGame() {
             if (timerInterval) clearInterval(timerInterval);
-            gameStartTime = Date.now();
-            timerInterval = setInterval(updateTimer, 1000);
+            isGameOver = false;
+            score = 0;
+            updateScoreUI();
             
             const type = document.getElementById('typeSelect').value;
             const selectedSet = symbolSets[type];
@@ -421,95 +458,125 @@
             
             dobbleOrder = parseInt(document.getElementById('orderSelect').value);
             allGeneratedCards = generateDeck();
-            score = 0;
-            updateScoreUI();
+            
+            let durationVal = document.getElementById('durationSelect').value;
+            let duration = 0;
+
+            if (durationVal === "custom") {
+                const customInput = document.getElementById('customDurationInput');
+                duration = parseInt(customInput.value) || 60; // 如果沒輸入，預設 60 秒
+            } else {
+                duration = parseInt(durationVal);
+            }
+
+            if (duration > 0) {
+                timerValue = duration;
+                document.getElementById('timerLabel').innerText = "剩餘時間";
+                timerInterval = setInterval(updateTimerCountdown, 1000);
+            } else {
+                timerValue = 0;
+                document.getElementById('timerLabel').innerText = "累計時間";
+                timerInterval = setInterval(updateTimerCountup, 1000);
+            }
+            
+            updateTimerDisplay();
             nextRound();
         }
 
-        function updateTimer() {
-            const diff = Math.floor((Date.now() - gameStartTime) / 1000);
-            const m = Math.floor(diff / 60).toString().padStart(2, '0');
-            const s = (diff % 60).toString().padStart(2, '0');
+        function updateTimerCountdown() {
+            timerValue--;
+            updateTimerDisplay();
+            if (timerValue <= 0) {
+                endGame("倒數結束！");
+            }
+        }
+
+        function updateTimerCountup() {
+            timerValue++;
+            updateTimerDisplay();
+        }
+
+        function updateTimerDisplay() {
+            const m = Math.floor(timerValue / 60).toString().padStart(2, '0');
+            const s = (timerValue % 60).toString().padStart(2, '0');
             document.getElementById('statTimer').innerText = `${m}:${s}`;
         }
 
+        function endGame(msg = "挑戰結束！") {
+            clearInterval(timerInterval);
+            isGameOver = true;
+            document.getElementById('finalScore').innerText = score;
+            document.getElementById('resultDesc').innerText = msg;
+            document.getElementById('resultModal').style.display = 'block';
+        }
+
+        function closeResultModal() {
+            document.getElementById('resultModal').style.display = 'none';
+        }
+
         function nextRound() {
+            if (isGameOver) return;
             const idx1 = Math.floor(Math.random() * allGeneratedCards.length);
             let idx2;
             do { idx2 = Math.floor(Math.random() * allGeneratedCards.length); } while (idx1 === idx2);
-
-            currentPairs = [
-                drawCardOnCanvas(ctx1, allGeneratedCards[idx1]),
-                drawCardOnCanvas(ctx2, allGeneratedCards[idx2])
-            ];
+            
+            cardStates[0] = createCardState(allGeneratedCards[idx1]);
+            cardStates[1] = createCardState(allGeneratedCards[idx2]);
+            
+            drawCardFromState(ctx1, cardStates[0]);
+            drawCardFromState(ctx2, cardStates[1]);
             
             document.getElementById('messageBox').innerText = "Comparing Symbols";
             document.getElementById('messageBox').classList.remove('text-green-500');
         }
 
         function checkClick(e, canvasIdx) {
+            if (isGameOver) return;
             const canvas = canvasIdx === 0 ? canvas1 : canvas2;
             const rect = canvas.getBoundingClientRect();
-            
-            // 點擊座標修正，確保無論縮放比例，都能對應到 450x450 的內部空間
             const scaleX = canvas.width / rect.width;
             const scaleY = canvas.height / rect.height;
             const x = (e.clientX - rect.left) * scaleX;
             const y = (e.clientY - rect.top) * scaleY;
             
-            const clickedItem = currentPairs[canvasIdx].find(item => {
+            const clickedItem = cardStates[canvasIdx].find(item => {
                 const dist = Math.sqrt((item.x - x)**2 + (item.y - y)**2);
-                return dist < item.size * 0.75; 
+                return dist < item.fontSize * 0.75; 
             });
 
             if (clickedItem) {
                 const otherIdx = 1 - canvasIdx;
-                const matchInOther = currentPairs[otherIdx].find(it => it.symbolIdx === clickedItem.symbolIdx);
-                
+                const matchInOther = cardStates[otherIdx].find(it => it.symbolIdx === clickedItem.symbolIdx);
                 if (matchInOther) {
-                    handleSuccess(clickedItem, matchInOther);
+                    handleSuccess(clickedItem.symbolIdx);
                 } else {
                     handleError(canvasIdx);
                 }
             }
         }
 
-        function handleSuccess(item1, item2) {
+        function handleSuccess(matchIdx) {
             score++;
             updateScoreUI();
-            showRing(0, item1);
-            showRing(1, item2);
+            
+            let frame = 0;
+            const totalFrames = 12;
+            const animate = () => {
+                const ringScale = 0.75 + (frame / totalFrames) * 0.35; 
+                drawCardFromState(ctx1, cardStates[0], 450, matchIdx, ringScale);
+                drawCardFromState(ctx2, cardStates[1], 450, matchIdx, ringScale);
+                
+                frame++;
+                if (frame <= totalFrames) {
+                    requestAnimationFrame(animate);
+                } else {
+                    setTimeout(nextRound, 300);
+                }
+            };
+            
             document.getElementById('messageBox').innerText = "Matched!";
             document.getElementById('messageBox').classList.add('text-green-500');
-            setTimeout(nextRound, 700);
-        }
-
-        function showRing(canvasIdx, item) {
-            const container = document.getElementById(`container${canvasIdx + 1}`);
-            const canvas = document.getElementById(`card${canvasIdx + 1}`);
-            
-            // 重要：精確計算 Canvas 相對於其父容器 Container 的物理位置位移
-            // offsetLeft/Top 在 Flex 佈局下能正確回報 Canvas 在 Container 內的起始座標
-            const rect = canvas.getBoundingClientRect();
-            const canvasOffsetLeft = canvas.offsetLeft;
-            const canvasOffsetTop = canvas.offsetTop;
-            
-            // 計算 Canvas 顯示尺寸與原始設計尺寸 (450) 的比例
-            const scale = rect.width / canvas.width;
-            
-            const ring = document.createElement('div');
-            ring.className = 'match-ring';
-            const displaySize = (item.size * 2.2) * scale;
-            
-            ring.style.width = displaySize + 'px';
-            ring.style.height = displaySize + 'px';
-            
-            // 圈選框位置 = Canvas位移 + (圖案內部座標 * 縮放比) - (圈選框半徑)
-            ring.style.left = (canvasOffsetLeft + item.x * scale - displaySize / 2) + 'px';
-            ring.style.top = (canvasOffsetTop + item.y * scale - displaySize / 2) + 'px';
-            
-            container.appendChild(ring);
-            setTimeout(() => ring.remove(), 600);
+            animate();
         }
 
         function handleError(idx) {
@@ -539,7 +606,7 @@
             container.innerHTML = '';
             modal.style.display = 'block';
             document.body.style.overflow = 'hidden';
-
+            
             const pCanvas = document.getElementById('pdfCanvas');
             const pCtx = pCanvas.getContext('2d');
             const totalCards = allGeneratedCards.length;
@@ -548,17 +615,14 @@
             for (let p = 0; p < totalPages; p++) {
                 const pageDiv = document.createElement('div');
                 pageDiv.className = 'pdf-page-preview';
-                
                 for (let i = 0; i < 6; i++) {
                     const cardIdx = p * 6 + i;
                     const cardWrap = document.createElement('div');
                     cardWrap.className = 'pdf-card-preview';
-                    
                     if (cardIdx < totalCards) {
                         const img = document.createElement('img');
-                        pCtx.fillStyle = "white";
-                        pCtx.fillRect(0, 0, 600, 600);
-                        drawCardOnCanvas(pCtx, allGeneratedCards[cardIdx], 600);
+                        const tempState = createCardState(allGeneratedCards[cardIdx], 600);
+                        drawCardFromState(pCtx, tempState, 600);
                         img.src = pCanvas.toDataURL('image/png');
                         img.style.width = '100%';
                         img.style.borderRadius = shape === 'circle' ? '50%' : '15%';
@@ -582,20 +646,28 @@
             const pCtx = pCanvas.getContext('2d');
             const cardSizeMM = 80; 
             const margin = 15;
-            
+
             for (let i = 0; i < allGeneratedCards.length; i++) {
-                pCtx.fillStyle = "white";
-                pCtx.fillRect(0, 0, 600, 600);
-                drawCardOnCanvas(pCtx, allGeneratedCards[i], 600);
+                const tempState = createCardState(allGeneratedCards[i], 600);
+                drawCardFromState(pCtx, tempState, 600);
                 const imgData = pCanvas.toDataURL('image/png');
+                
                 const x = (i % 2 === 0) ? margin : margin + cardSizeMM + 10;
                 const row = Math.floor((i % 6) / 2);
                 const y = margin + row * (cardSizeMM + 10);
+                
                 doc.setDrawColor(240, 240, 240);
-                if (shape === 'circle') doc.ellipse(x + cardSizeMM/2, y + cardSizeMM/2, cardSizeMM/2, cardSizeMM/2);
-                else doc.rect(x, y, cardSizeMM, cardSizeMM);
+                if (shape === 'circle') {
+                    doc.ellipse(x + cardSizeMM/2, y + cardSizeMM/2, cardSizeMM/2, cardSizeMM/2);
+                } else {
+                    doc.rect(x, y, cardSizeMM, cardSizeMM);
+                }
+                
                 doc.addImage(imgData, 'PNG', x, y, cardSizeMM, cardSizeMM);
-                if ((i + 1) % 6 === 0 && i < allGeneratedCards.length - 1) doc.addPage();
+                
+                if ((i + 1) % 6 === 0 && i < allGeneratedCards.length - 1) {
+                    doc.addPage();
+                }
             }
             doc.save('find-match-cards.pdf');
             closePdfPreview();
@@ -629,6 +701,7 @@
 
         canvas1.addEventListener('click', (e) => checkClick(e, 0));
         canvas2.addEventListener('click', (e) => checkClick(e, 1));
+        
         window.onload = startGame;
     </script>
 </body>
